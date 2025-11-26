@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files (PRODUCTION SIFRELERI!)
+.env
+.env.local
+.env.production
+.env*.local
+backend/.env
+backend/.env.local
+backend/.env.production
+frontend/.env.local
+frontend/.env.production
+
+# Keep examples
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+
+# Prisma
+*.db
+*.db-journal
+
+# Misc
+.cache/
+tmp/

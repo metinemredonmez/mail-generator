@@ -1,0 +1,86 @@
+# ============================================
+# SHARED INFRASTRUCTURE - PostgreSQL & Redis
+# Tum projeler icin ortak veritabani servisleri
+# ============================================
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: shared-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - shared-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: shared-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis123
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - shared-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer - Veritabani Yonetim Paneli
+  adminer:
+    image: adminer:latest
+    container_name: shared-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - shared-network
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+  # Redis Commander - Redis Yonetim Paneli
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: shared-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    networks:
+      - shared-network
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:redis123
+
+volumes:
+  postgres_data:
+    name: shared-postgres-data
+  redis_data:
+    name: shared-redis-data
+
+networks:
+  shared-network:
+    name: shared-network
+    driver: bridge
