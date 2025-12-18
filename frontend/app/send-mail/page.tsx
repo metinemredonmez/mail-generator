@@ -40,6 +40,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { api } from '@/lib/api';
+import { FullLayout } from '@/src/layouts/full';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -297,6 +298,7 @@ export default function SendMailPage() {
   const passengers = passengersData?.data?.filter((p: any) => p.email?.address) || [];
 
   return (
+    <FullLayout>
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" fontWeight="bold" gutterBottom>
         E-posta Gonder
@@ -623,5 +625,6 @@ export default function SendMailPage() {
         </DialogActions>
       </Dialog>
     </Box>
+    </FullLayout>
   );
 }
