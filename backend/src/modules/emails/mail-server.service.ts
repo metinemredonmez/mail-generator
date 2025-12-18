@@ -175,7 +175,15 @@ export class MailServerService {
 
   private async deleteCLIMailbox(email: string): Promise<boolean> {
     try {
-      const command = `/usr/local/CyberCP/bin/python /usr/local/CyberCP/plogical/mailUtilities.py deleteEmailAccount --email ${email}`;
+      // email formatı: username@domain.com
+      const [userName, domain] = email.split('@');
+
+      if (!userName || !domain) {
+        this.logger.error(`[CLI] Invalid email format: ${email}`);
+        return false;
+      }
+
+      const command = `/usr/local/CyberCP/bin/python /usr/local/CyberCP/plogical/mailUtilities.py deleteEmailAccount --domain ${domain} --userName ${userName}`;
 
       this.logger.log(`[CLI] Deleting mailbox: ${email}`);
 
