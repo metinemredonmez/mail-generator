@@ -35,6 +35,8 @@ export class ImapService {
   ): Promise<FetchedEmail[]> {
     const { unseen = false, limit = 50 } = options;
 
+    this.logger.log(`[IMAP] Connecting to ${this.imapHost}:${this.imapPort} (tls: ${this.imapTls}) for ${email}`);
+
     return new Promise((resolve, reject) => {
       const imap = new Imap({
         user: email,
@@ -48,6 +50,7 @@ export class ImapService {
       const emails: FetchedEmail[] = [];
 
       imap.once('ready', () => {
+        this.logger.log(`[IMAP] Connected successfully for ${email}`);
         imap.openBox('INBOX', true, (err, box) => {
           if (err) {
             imap.end();
@@ -58,9 +61,12 @@ export class ImapService {
 
           imap.search(searchCriteria, (searchErr, results) => {
             if (searchErr) {
+              this.logger.error(`[IMAP] Search error: ${searchErr.message}`);
               imap.end();
               return reject(searchErr);
             }
+
+            this.logger.log(`[IMAP] Search found ${results?.length || 0} messages`);
 
             if (!results || results.length === 0) {
               imap.end();
@@ -69,6 +75,7 @@ export class ImapService {
 
             // Get last N emails
             const toFetch = results.slice(-limit);
+            this.logger.log(`[IMAP] Fetching ${toFetch.length} messages`);
 
             const fetch = imap.fetch(toFetch, {
               bodies: '',
