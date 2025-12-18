@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CyberPanelService } from './cyberpanel.service';
 import * as crypto from 'crypto';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 interface CreateMailboxResult {
   email: string;
@@ -68,6 +72,9 @@ export class MailServerService {
         case 'custom':
           return await this.createCustomMailbox(email, password, displayName);
 
+        case 'cli':
+          return await this.createCLIMailbox(username, password, displayName);
+
         case 'mock':
         default:
           // Mock implementation for development
@@ -104,6 +111,9 @@ export class MailServerService {
         case 'custom':
           return await this.deleteCustomMailbox(email);
 
+        case 'cli':
+          return await this.deleteCLIMailbox(email);
+
         case 'mock':
         default:
           this.logger.log(`[MOCK] Deleting mailbox: ${email}`);
@@ -113,6 +123,87 @@ export class MailServerService {
       this.logger.error(`Failed to delete mailbox: ${error.message}`);
       return false;
     }
+  }
+
+  // ============ CLI Implementation (CyberPanel CLI) ============
+
+  private async createCLIMailbox(
+    username: string,
+    password: string,
+    displayName?: string,
+  ): Promise<CreateMailboxResult> {
+    const email = `${username}@${this.domain}`;
+
+    try {
+      // Türkçe karakterleri temizle
+      const cleanUsername = this.sanitizeUsername(username);
+      const cleanEmail = `${cleanUsername}@${this.domain}`;
+
+      const command = `python3 /usr/local/CyberCP/plogical/mailUtilities.py --function createEmailAccount --domain ${this.domain} --userName ${cleanUsername} --password "${password}"`;
+
+      this.logger.log(`[CLI] Creating mailbox: ${cleanEmail}`);
+
+      const { stdout, stderr } = await execAsync(command, { timeout: 30000 });
+
+      if (stderr && stderr.includes('error')) {
+        this.logger.error(`[CLI] Error: ${stderr}`);
+        return {
+          email: cleanEmail,
+          password: '',
+          success: false,
+          error: stderr,
+        };
+      }
+
+      this.logger.log(`[CLI] Mailbox created successfully: ${cleanEmail}`);
+      return {
+        email: cleanEmail,
+        password,
+        success: true,
+      };
+    } catch (error) {
+      this.logger.error(`[CLI] Failed to create mailbox: ${error.message}`);
+      return {
+        email,
+        password: '',
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  private async deleteCLIMailbox(email: string): Promise<boolean> {
+    try {
+      const command = `python3 /usr/local/CyberCP/plogical/mailUtilities.py --function deleteEmailAccount --email ${email}`;
+
+      this.logger.log(`[CLI] Deleting mailbox: ${email}`);
+
+      await execAsync(command, { timeout: 30000 });
+
+      this.logger.log(`[CLI] Mailbox deleted successfully: ${email}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`[CLI] Failed to delete mailbox: ${error.message}`);
+      return false;
+    }
+  }
+
+  private sanitizeUsername(username: string): string {
+    return username
+      .toLowerCase()
+      .replace(/ğ/g, 'g')
+      .replace(/ü/g, 'u')
+      .replace(/ş/g, 's')
+      .replace(/ı/g, 'i')
+      .replace(/ö/g, 'o')
+      .replace(/ç/g, 'c')
+      .replace(/İ/g, 'i')
+      .replace(/Ğ/g, 'g')
+      .replace(/Ü/g, 'u')
+      .replace(/Ş/g, 's')
+      .replace(/Ö/g, 'o')
+      .replace(/Ç/g, 'c')
+      .replace(/[^a-z0-9._-]/g, '');
   }
 
   // ============ CyberPanel Implementation ============
