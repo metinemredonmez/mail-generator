@@ -46,7 +46,9 @@ export default function EmailsPage() {
   const [search, setSearch] = useState('');
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({});
   const [loadingPasswords, setLoadingPasswords] = useState<Record<string, boolean>>({});
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 20 });
@@ -108,6 +110,21 @@ export default function EmailsPage() {
       toast.success('E-posta silindi');
       setShowDeleteConfirm(false);
       setSelectedEmail(null);
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (emailIds: string[]) => emailsApi.bulkDelete({ emailIds }),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] });
+      queryClient.invalidateQueries({ queryKey: ['passengers'] });
+      const { success, failed } = response.data;
+      toast.success(`${success.length} e-posta silindi${failed.length > 0 ? `, ${failed.length} basarisiz` : ''}`);
+      setShowBulkDeleteConfirm(false);
+      setSelectedRows([]);
+    },
+    onError: () => {
+      toast.error('Toplu silme basarisiz');
     },
   });
 
@@ -336,6 +353,16 @@ export default function EmailsPage() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={2}>
+            {selectedRows.length > 0 && (
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<IconTrash size={20} />}
+                onClick={() => setShowBulkDeleteConfirm(true)}
+              >
+                {selectedRows.length} E-posta Sil
+              </Button>
+            )}
             <Button
               variant="outlined"
               startIcon={<IconRefresh size={20} />}
@@ -432,7 +459,9 @@ export default function EmailsPage() {
               pageSizeOptions={[10, 20, 50]}
               rowCount={data?.meta?.total || 0}
               paginationMode="server"
-              disableRowSelectionOnClick
+              checkboxSelection
+              rowSelectionModel={selectedRows}
+              onRowSelectionModelChange={(newSelection) => setSelectedRows(newSelection as string[])}
               autoHeight
               sx={{
                 border: 'none',
@@ -500,6 +529,22 @@ export default function EmailsPage() {
             setSelectedEmail(null);
           }}
           loading={deleteMutation.isPending}
+        />
+
+        {/* Bulk Delete Confirm */}
+        <ConfirmDialog
+          open={showBulkDeleteConfirm}
+          title="Toplu E-posta Sil"
+          message={`${selectedRows.length} e-posta adresini silmek istediginize emin misiniz? Bu islem geri alinamaz ve mail sunucusundan da silinecektir.`}
+          confirmText={`${selectedRows.length} E-posta Sil`}
+          confirmColor="error"
+          onConfirm={() => {
+            bulkDeleteMutation.mutate(selectedRows);
+          }}
+          onCancel={() => {
+            setShowBulkDeleteConfirm(false);
+          }}
+          loading={bulkDeleteMutation.isPending}
         />
       </Box>
     </FullLayout>

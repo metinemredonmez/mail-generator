@@ -32,7 +32,8 @@ export class MailServerService {
    * Generate a secure random password
    */
   generatePassword(length = 16): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    // Sadece harf ve rakam - shell ve IMAP uyumlu
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let password = '';
     const randomBytes = crypto.randomBytes(length);
     for (let i = 0; i < length; i++) {

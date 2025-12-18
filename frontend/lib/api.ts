@@ -81,6 +81,8 @@ export const emailsApi = {
     api.post(`/emails/passenger/${passengerId}`, data),
   bulkCreate: (data: { passengerIds: string[] }) =>
     api.post('/emails/bulk', data),
+  bulkDelete: (data: { emailIds: string[] }) =>
+    api.post('/emails/bulk-delete', data),
   update: (id: string, data: { isActive?: boolean }) =>
     api.patch(`/emails/${id}`, data),
   deactivate: (id: string) => api.post(`/emails/${id}/deactivate`),

@@ -284,6 +284,36 @@ export class EmailsService {
   }
 
   /**
+   * Bulk delete emails
+   */
+  async bulkDelete(emailIds: string[]) {
+    const results = {
+      success: [] as string[],
+      failed: [] as { id: string; error: string }[],
+    };
+
+    for (const id of emailIds) {
+      try {
+        await this.remove(id);
+        results.success.push(id);
+      } catch (error) {
+        results.failed.push({ id, error: error.message });
+      }
+    }
+
+    // Bildirim gönder
+    if (results.success.length > 0) {
+      await this.notificationsService.notifyBulkComplete(
+        'E-posta Silme',
+        results.success.length,
+        results.failed.length,
+      );
+    }
+
+    return results;
+  }
+
+  /**
    * Get email statistics
    */
   async getStats() {

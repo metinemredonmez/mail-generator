@@ -85,6 +85,12 @@ export class EmailsController {
     return this.emailsService.remove(id);
   }
 
+  @Post('bulk-delete')
+  @ApiOperation({ summary: 'Toplu e-posta sil' })
+  bulkDelete(@Body() dto: { emailIds: string[] }) {
+    return this.emailsService.bulkDelete(dto.emailIds);
+  }
+
   @Post('test-connection')
   @ApiOperation({ summary: 'Mail sunucu baglantisini test et' })
   testConnection() {
