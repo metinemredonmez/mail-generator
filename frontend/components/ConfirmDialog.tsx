@@ -8,6 +8,8 @@ import {
   Button,
   Typography,
   Stack,
+  CircularProgress,
+  Box,
 } from '@mui/material';
 import { IconAlertTriangle, IconTrash, IconCheck } from '@tabler/icons-react';
 
@@ -20,6 +22,7 @@ interface ConfirmDialogProps {
   confirmColor?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
   type?: 'danger' | 'warning' | 'info';
   loading?: boolean;
+  loadingText?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -33,6 +36,7 @@ export default function ConfirmDialog({
   confirmColor,
   type = 'danger',
   loading = false,
+  loadingText = 'Isleniyor...',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -59,35 +63,52 @@ export default function ConfirmDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ textAlign: 'center', pt: 4 }}>
-        <Stack alignItems="center" spacing={2}>
-          {getIcon()}
-          <Typography variant="h6">{title}</Typography>
-        </Stack>
-      </DialogTitle>
-      <DialogContent>
-        {typeof message === 'string' ? (
-          <Typography variant="body1" color="text.secondary" textAlign="center">
-            {message}
-          </Typography>
-        ) : (
-          message
-        )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center' }}>
-        <Button variant="outlined" onClick={onCancel} disabled={loading}>
-          {cancelText}
-        </Button>
-        <Button
-          variant="contained"
-          color={confirmColor || getButtonColor()}
-          onClick={onConfirm}
-          disabled={loading}
-        >
-          {loading ? 'Isleniyor...' : confirmText}
-        </Button>
-      </DialogActions>
+    <Dialog open={open} onClose={loading ? undefined : onCancel} maxWidth="xs" fullWidth>
+      {loading ? (
+        // Loading state
+        <Box sx={{ py: 6, px: 4 }}>
+          <Stack alignItems="center" spacing={3}>
+            <CircularProgress size={56} thickness={4} />
+            <Typography variant="h6" color="text.primary">
+              {loadingText}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              Lutfen bekleyin, bu islem biraz zaman alabilir...
+            </Typography>
+          </Stack>
+        </Box>
+      ) : (
+        // Normal state
+        <>
+          <DialogTitle sx={{ textAlign: 'center', pt: 4 }}>
+            <Stack alignItems="center" spacing={2}>
+              {getIcon()}
+              <Typography variant="h6">{title}</Typography>
+            </Stack>
+          </DialogTitle>
+          <DialogContent>
+            {typeof message === 'string' ? (
+              <Typography variant="body1" color="text.secondary" textAlign="center">
+                {message}
+              </Typography>
+            ) : (
+              message
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center' }}>
+            <Button variant="outlined" onClick={onCancel}>
+              {cancelText}
+            </Button>
+            <Button
+              variant="contained"
+              color={confirmColor || getButtonColor()}
+              onClick={onConfirm}
+            >
+              {confirmText}
+            </Button>
+          </DialogActions>
+        </>
+      )}
     </Dialog>
   );
 }

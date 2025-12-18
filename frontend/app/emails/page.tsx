@@ -21,6 +21,7 @@ import {
   Grid,
   Tooltip,
   Collapse,
+  CircularProgress,
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import {
@@ -35,6 +36,7 @@ import {
   IconEyeOff,
   IconKey,
   IconInbox,
+  IconLoader2,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { FullLayout } from '@/src/layouts/full';
@@ -365,11 +367,11 @@ export default function EmailsPage() {
             )}
             <Button
               variant="outlined"
-              startIcon={<IconRefresh size={20} />}
+              startIcon={syncAllMutation.isPending ? <IconLoader2 size={20} className="animate-spin" /> : <IconRefresh size={20} />}
               onClick={() => syncAllMutation.mutate()}
               disabled={syncAllMutation.isPending}
             >
-              Tumu Senkronize Et
+              {syncAllMutation.isPending ? 'Senkronize Ediliyor...' : 'Tumu Senkronize Et'}
             </Button>
             <Button
               variant="contained"
@@ -499,15 +501,16 @@ export default function EmailsPage() {
             </Alert>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button variant="outlined" onClick={() => setShowBulkModal(false)}>
+            <Button variant="outlined" onClick={() => setShowBulkModal(false)} disabled={bulkCreateMutation.isPending}>
               Iptal
             </Button>
             <Button
               variant="contained"
               onClick={handleBulkCreate}
               disabled={bulkCreateMutation.isPending}
+              startIcon={bulkCreateMutation.isPending ? <CircularProgress size={16} color="inherit" /> : null}
             >
-              {bulkCreateMutation.isPending ? 'Olusturuluyor...' : 'Olustur'}
+              {bulkCreateMutation.isPending ? 'E-postalar Olusturuluyor...' : 'Olustur'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -529,6 +532,7 @@ export default function EmailsPage() {
             setSelectedEmail(null);
           }}
           loading={deleteMutation.isPending}
+          loadingText="E-posta Siliniyor..."
         />
 
         {/* Bulk Delete Confirm */}
@@ -545,6 +549,7 @@ export default function EmailsPage() {
             setShowBulkDeleteConfirm(false);
           }}
           loading={bulkDeleteMutation.isPending}
+          loadingText="E-postalar Siliniyor..."
         />
       </Box>
     </FullLayout>

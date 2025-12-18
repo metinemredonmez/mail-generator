@@ -183,11 +183,21 @@ export class MailServerService {
         return false;
       }
 
-      const command = `/usr/local/CyberCP/bin/python /usr/local/CyberCP/plogical/mailUtilities.py deleteEmailAccount --domain ${domain} --userName ${userName}`;
-
       this.logger.log(`[CLI] Deleting mailbox: ${email}`);
 
-      await execAsync(command, { timeout: 30000 });
+      // CyberPanel CLI deleteEmailAccount çalışmıyor, doğrudan MySQL ile siliyoruz
+      // 1. Önce foreign key constraint olan tablodan sil
+      const deleteLimitsCmd = `mysql -u root cyberpanel -e "DELETE FROM emailPremium_emaillimits WHERE email_id='${email}';"`;
+      await execAsync(deleteLimitsCmd, { timeout: 30000 }).catch(() => {});
+
+      // 2. e_users tablosundan sil
+      const deleteUserCmd = `mysql -u root cyberpanel -e "DELETE FROM e_users WHERE email='${email}';"`;
+      await execAsync(deleteUserCmd, { timeout: 30000 });
+
+      // 3. Maildir klasörünü sil
+      const mailDirPath = `/home/vmail/${domain}/${userName}`;
+      const deleteMaildirCmd = `rm -rf "${mailDirPath}"`;
+      await execAsync(deleteMaildirCmd, { timeout: 30000 });
 
       this.logger.log(`[CLI] Mailbox deleted successfully: ${email}`);
       return true;

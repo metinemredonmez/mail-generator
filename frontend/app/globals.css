@@ -96,3 +96,17 @@ html[style*='color-scheme: dark'] ::-webkit-scrollbar-thumb:hover {
   opacity: 1;
   transform: rotate(3deg) translate(0px, -4px);
 }
+
+/* Spin animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
