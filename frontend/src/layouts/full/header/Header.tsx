@@ -49,6 +49,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Cookie'yi de sil
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     router.push('/auth/login');
     handleClose();
   };
