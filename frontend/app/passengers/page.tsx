@@ -179,8 +179,8 @@ export default function PassengersPage() {
       queryClient.invalidateQueries({ queryKey: ['passengers'] });
       queryClient.invalidateQueries({ queryKey: ['passenger-stats'] });
       queryClient.invalidateQueries({ queryKey: ['email-stats'] });
-      const { created, failed } = response.data;
-      toast.success(`${created} e-posta olusturuldu${failed > 0 ? `, ${failed} basarisiz` : ''}`, {
+      const { success, failed } = response.data;
+      toast.success(`${success.length} e-posta olusturuldu${failed.length > 0 ? `, ${failed.length} basarisiz` : ''}`, {
         duration: 5000,
       });
       setSelectedRows([]);

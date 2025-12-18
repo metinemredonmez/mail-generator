@@ -99,8 +99,8 @@ export default function EmailsPage() {
       queryClient.invalidateQueries({ queryKey: ['passengers'] });
       queryClient.invalidateQueries({ queryKey: ['passengers-without-email'] });
 
-      const { created, failed } = response.data;
-      toast.success(`${created} e-posta olusturuldu${failed > 0 ? `, ${failed} basarisiz` : ''}`);
+      const { success, failed } = response.data;
+      toast.success(`${success.length} e-posta olusturuldu${failed.length > 0 ? `, ${failed.length} basarisiz` : ''}`);
       setShowBulkModal(false);
     },
   });
