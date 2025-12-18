@@ -73,7 +73,8 @@ export default function MessagesPage() {
   // E-posta adreslerini çıkar
   const emailAddresses = useMemo(() => {
     if (!data?.data) return [];
-    const emails = [...new Set(data.data.map((m: Message) => m.email).filter(Boolean))];
+    const emailSet = new Set(data.data.map((m: Message) => m.email).filter(Boolean));
+    const emails = Array.from(emailSet) as string[];
     return emails.sort();
   }, [data?.data]);
 
