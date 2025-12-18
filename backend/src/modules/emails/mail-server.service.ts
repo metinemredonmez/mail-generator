@@ -156,6 +156,12 @@ export class MailServerService {
         };
       }
 
+      // CLI şifreyi düzgün kaydetmiyor, bcrypt ile güncelle
+      const updatePasswordCmd = `NEW_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw(b'${password}', bcrypt.gensalt()).decode())") && mysql -u root cyberpanel -e "UPDATE e_users SET password='{CRYPT}'\\"\\$NEW_HASH\\" WHERE email='${cleanEmail}';"`;
+      await execAsync(updatePasswordCmd, { timeout: 30000 }).catch((err) => {
+        this.logger.warn(`[CLI] Password update warning: ${err.message}`);
+      });
+
       this.logger.log(`[CLI] Mailbox created successfully: ${cleanEmail}`);
       return {
         email: cleanEmail,
