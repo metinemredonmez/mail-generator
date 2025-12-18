@@ -55,9 +55,9 @@ export class InboxService {
         return { synced: 0, message: 'Password decryption failed - old format?' };
       }
 
-      // Real IMAP sync
+      // Real IMAP sync - fetch ALL messages (not just unseen)
       const messages = await this.imapService.fetchEmails(email.address, plainPassword, {
-        unseen: true,
+        unseen: false,
         limit: 50,
       });
 
