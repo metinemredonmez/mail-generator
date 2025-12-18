@@ -163,7 +163,9 @@ export class MailServerService {
           { timeout: 10000 }
         );
         const bcryptHash = hashOutput.trim();
-        const updateSql = `UPDATE e_users SET password='{CRYPT}${bcryptHash}' WHERE email='${cleanEmail}';`;
+        // $ karakterini escape et (shell değişken olarak yorumlamasın)
+        const escapedHash = bcryptHash.replace(/\$/g, '\\$');
+        const updateSql = `UPDATE e_users SET password='{CRYPT}${escapedHash}' WHERE email='${cleanEmail}';`;
         await execAsync(`mysql -u root cyberpanel -e "${updateSql}"`, { timeout: 10000 });
         this.logger.log(`[CLI] Password updated with bcrypt for: ${cleanEmail}`);
       } catch (err) {
