@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
@@ -12,7 +12,6 @@ import {
   Avatar,
   Chip,
   IconButton,
-  Grid,
   Paper,
   Pagination,
   Dialog,
@@ -20,6 +19,11 @@ import {
   DialogContent,
   DialogActions,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
 } from '@mui/material';
 import {
   IconMail,
@@ -28,6 +32,8 @@ import {
   IconEye,
   IconCircleCheck,
   IconX,
+  IconFilter,
+  IconTrash,
 } from '@tabler/icons-react';
 import toast from 'react-hot-toast';
 import { FullLayout } from '@/src/layouts/full';
@@ -57,11 +63,26 @@ export default function MessagesPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedEmail, setSelectedEmail] = useState<string>('all');
 
   const { data, isLoading } = useQuery({
     queryKey: ['all-messages', page],
-    queryFn: () => inboxApi.getAllMessages({ page, limit: 20 }).then((res) => res.data),
+    queryFn: () => inboxApi.getAllMessages({ page, limit: 100 }).then((res) => res.data),
   });
+
+  // E-posta adreslerini çıkar
+  const emailAddresses = useMemo(() => {
+    if (!data?.data) return [];
+    const emails = [...new Set(data.data.map((m: Message) => m.email).filter(Boolean))];
+    return emails.sort();
+  }, [data?.data]);
+
+  // Filtrelenmiş mesajlar
+  const filteredMessages = useMemo(() => {
+    if (!data?.data) return [];
+    if (selectedEmail === 'all') return data.data;
+    return data.data.filter((m: Message) => m.email === selectedEmail);
+  }, [data?.data, selectedEmail]);
 
   const syncAllMutation = useMutation({
     mutationFn: inboxApi.syncAll,
@@ -81,7 +102,29 @@ export default function MessagesPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: inboxApi.deleteItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-messages'] });
+      setSelectedMessage(null);
+      toast.success('Mesaj silindi');
+    },
+    onError: () => {
+      toast.error('Silme hatasi');
+    },
+  });
+
   const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    if (isToday) {
+      return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' });
+  };
+
+  const formatFullDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString('tr-TR');
   };
 
@@ -92,7 +135,8 @@ export default function MessagesPage() {
     }
   };
 
-  const unreadCount = data?.data?.filter((d: Message) => !d.isRead).length || 0;
+  const unreadCount = filteredMessages.filter((d: Message) => !d.isRead).length;
+  const codeCount = filteredMessages.filter((d: Message) => d.verificationCode).length;
 
   return (
     <FullLayout>
@@ -103,220 +147,200 @@ export default function MessagesPage() {
           justifyContent="space-between"
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           spacing={2}
-          mb={4}
+          mb={3}
         >
           <Box>
             <Typography variant="h4" fontWeight={700}>
               Gelen Kutusu
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Tum gelen mesajlari goruntuleyin
+            <Typography variant="body2" color="text.secondary">
+              {filteredMessages.length} mesaj {selectedEmail !== 'all' && `(${selectedEmail})`}
             </Typography>
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<IconRefresh size={20} />}
-            onClick={() => syncAllMutation.mutate()}
-            disabled={syncAllMutation.isPending}
-          >
-            {syncAllMutation.isPending ? 'Senkronize Ediliyor...' : 'Tum Kutulari Senkronize Et'}
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>E-posta Filtrele</InputLabel>
+              <Select
+                value={selectedEmail}
+                label="E-posta Filtrele"
+                onChange={(e) => setSelectedEmail(e.target.value)}
+              >
+                <MenuItem value="all">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <IconMail size={16} />
+                    <span>Tum E-postalar ({data?.data?.length || 0})</span>
+                  </Stack>
+                </MenuItem>
+                {emailAddresses.map((email: string) => {
+                  const count = data?.data?.filter((m: Message) => m.email === email).length || 0;
+                  return (
+                    <MenuItem key={email} value={email}>
+                      {email} ({count})
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+            </FormControl>
+            <Button
+              variant="contained"
+              startIcon={<IconRefresh size={18} />}
+              onClick={() => syncAllMutation.mutate()}
+              disabled={syncAllMutation.isPending}
+              size="small"
+            >
+              {syncAllMutation.isPending ? 'Senkronize...' : 'Senkronize Et'}
+            </Button>
+          </Stack>
         </Stack>
 
-        {/* Stats */}
-        <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ bgcolor: 'primary.light', width: 48, height: 48 }}>
-                    <IconMail size={24} color="#5D87FF" />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Toplam Mesaj
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700}>
-                      {data?.meta?.total || 0}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ bgcolor: 'warning.light', width: 48, height: 48 }}>
-                    <IconMailOpened size={24} color="#FFAE1F" />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Okunmamis
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="warning.main">
-                      {unreadCount}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card>
-              <CardContent>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <Avatar sx={{ bgcolor: 'success.light', width: 48, height: 48 }}>
-                    <IconCircleCheck size={24} color="#13DEB9" />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Kodlu Mesaj
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="success.main">
-                      {data?.data?.filter((d: Message) => d.verificationCode).length || 0}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        {/* Stats - Kompakt */}
+        <Stack direction="row" spacing={2} mb={3}>
+          <Chip
+            icon={<IconMail size={16} />}
+            label={`${filteredMessages.length} Mesaj`}
+            color="primary"
+            variant="outlined"
+          />
+          <Chip
+            icon={<IconMailOpened size={16} />}
+            label={`${unreadCount} Okunmamis`}
+            color={unreadCount > 0 ? 'warning' : 'default'}
+            variant={unreadCount > 0 ? 'filled' : 'outlined'}
+          />
+          <Chip
+            icon={<IconCircleCheck size={16} />}
+            label={`${codeCount} Kodlu`}
+            color={codeCount > 0 ? 'success' : 'default'}
+            variant={codeCount > 0 ? 'filled' : 'outlined'}
+          />
+        </Stack>
 
-        {/* Messages List */}
+        {/* Messages List - Kompakt */}
         <Card>
-          <CardContent>
-            <Typography variant="h6" fontWeight={600} mb={3}>
-              Mesajlar
-            </Typography>
-
+          <CardContent sx={{ p: 0 }}>
             {isLoading ? (
-              <Box textAlign="center" py={8}>
+              <Box textAlign="center" py={4}>
                 <Typography>Yukleniyor...</Typography>
               </Box>
-            ) : data?.data?.length === 0 ? (
-              <Box textAlign="center" py={8}>
-                <IconMail size={64} color="#DFE5EF" />
-                <Typography variant="h6" mt={2}>
-                  Henuz mesaj yok
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Gelen kutularini senkronize ettikten sonra mesajlar burada gorunecek
+            ) : filteredMessages.length === 0 ? (
+              <Box textAlign="center" py={4}>
+                <IconMail size={48} color="#DFE5EF" />
+                <Typography variant="body1" mt={1}>
+                  {selectedEmail === 'all' ? 'Henuz mesaj yok' : 'Bu e-postada mesaj yok'}
                 </Typography>
               </Box>
             ) : (
-              <Stack spacing={1}>
-                {data?.data?.map((item: Message) => (
-                  <Paper
+              <Box>
+                {filteredMessages.map((item: Message, index: number) => (
+                  <Box
                     key={item.id}
                     sx={{
-                      p: 2,
-                      bgcolor: item.isRead ? 'background.paper' : 'primary.light',
-                      border: '1px solid',
-                      borderColor: item.isRead ? 'divider' : 'primary.main',
-                      borderRadius: 2,
+                      px: 2,
+                      py: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
+                      borderBottom: index < filteredMessages.length - 1 ? '1px solid' : 'none',
+                      borderColor: 'divider',
+                      bgcolor: item.isRead ? 'transparent' : 'action.hover',
                       '&:hover': {
-                        bgcolor: item.isRead ? 'action.hover' : 'primary.light',
-                        transform: 'translateX(4px)',
+                        bgcolor: 'action.selected',
                       },
                     }}
                     onClick={() => openMessage(item)}
                   >
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      justifyContent="space-between"
-                      alignItems={{ xs: 'flex-start', sm: 'center' }}
-                      spacing={2}
+                    {/* Okunmamış indicator */}
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: item.isRead ? 'transparent' : 'primary.main',
+                        flexShrink: 0,
+                      }}
+                    />
+
+                    {/* Gönderen */}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        width: 180,
+                        flexShrink: 0,
+                        fontWeight: item.isRead ? 400 : 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
                     >
-                      <Stack direction="row" spacing={2} alignItems="center" flex={1}>
-                        <Avatar
+                      {item.fromAddress.split('@')[0]}
+                    </Typography>
+
+                    {/* Konu ve içerik */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography
+                          variant="body2"
                           sx={{
-                            bgcolor: item.isRead ? 'grey.200' : 'primary.main',
-                            width: 40,
-                            height: 40,
+                            fontWeight: item.isRead ? 400 : 600,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          {item.isRead ? (
-                            <IconMailOpened size={20} color="#666" />
-                          ) : (
-                            <IconMail size={20} color="#fff" />
-                          )}
-                        </Avatar>
-                        <Box flex={1} minWidth={0}>
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Typography
-                              variant="subtitle2"
-                              fontWeight={item.isRead ? 400 : 700}
-                              noWrap
-                            >
-                              {item.fromAddress}
-                            </Typography>
-                            {!item.isRead && (
-                              <Chip label="Yeni" size="small" color="primary" />
-                            )}
-                            {item.verificationCode && (
-                              <Chip
-                                label={`Kod: ${item.verificationCode}`}
-                                size="small"
-                                color="success"
-                              />
-                            )}
-                          </Stack>
-                          <Typography
-                            variant="body2"
-                            fontWeight={item.isRead ? 400 : 600}
-                            noWrap
-                            color={item.isRead ? 'text.secondary' : 'text.primary'}
-                          >
-                            {item.subject}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap>
-                            {item.passenger
-                              ? `${item.passenger.firstName} ${item.passenger.lastName} - `
-                              : ''}
-                            {item.email}
-                          </Typography>
-                        </Box>
-                      </Stack>
-
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="caption" color="text.secondary" whiteSpace="nowrap">
-                          {formatDate(item.receivedAt)}
+                          {item.subject}
                         </Typography>
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openMessage(item); }}>
-                          <IconEye size={18} />
-                        </IconButton>
+                        {item.verificationCode && (
+                          <Chip
+                            label={item.verificationCode}
+                            size="small"
+                            color="success"
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        )}
                       </Stack>
-                    </Stack>
-                  </Paper>
-                ))}
-              </Stack>
-            )}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          display: 'block',
+                        }}
+                      >
+                        {item.email} {item.passenger && `• ${item.passenger.firstName} ${item.passenger.lastName}`}
+                      </Typography>
+                    </Box>
 
-            {/* Pagination */}
-            {data?.meta && data.meta.totalPages > 1 && (
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                mt={4}
-                pt={3}
-                borderTop={1}
-                borderColor="divider"
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Toplam {data.meta.total} mesaj
-                </Typography>
-                <Pagination
-                  count={data.meta.totalPages}
-                  page={page}
-                  onChange={(_, value) => setPage(value)}
-                  color="primary"
-                />
-              </Stack>
+                    {/* Tarih ve Sil */}
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ width: 50, textAlign: 'right' }}
+                      >
+                        {formatDate(item.receivedAt)}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Bu mesaji silmek istediginizden emin misiniz?')) {
+                            deleteMutation.mutate(item.id);
+                          }
+                        }}
+                        sx={{
+                          opacity: 0.5,
+                          '&:hover': { opacity: 1, color: 'error.main' }
+                        }}
+                      >
+                        <IconTrash size={16} />
+                      </IconButton>
+                    </Stack>
+                  </Box>
+                ))}
+              </Box>
             )}
           </CardContent>
         </Card>
@@ -332,7 +356,7 @@ export default function MessagesPage() {
             <>
               <DialogTitle>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h6" fontWeight={600} noWrap sx={{ flex: 1 }}>
                     {selectedMessage.subject}
                   </Typography>
                   <IconButton onClick={() => setSelectedMessage(null)}>
@@ -353,11 +377,6 @@ export default function MessagesPage() {
                         <Typography variant="body2" fontWeight={500}>
                           {selectedMessage.fromName || selectedMessage.fromAddress}
                         </Typography>
-                        {selectedMessage.fromName && (
-                          <Typography variant="caption" color="text.secondary">
-                            {selectedMessage.fromAddress}
-                          </Typography>
-                        )}
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="caption" color="text.secondary">
@@ -377,7 +396,7 @@ export default function MessagesPage() {
                           Tarih
                         </Typography>
                         <Typography variant="body2">
-                          {formatDate(selectedMessage.receivedAt)}
+                          {formatFullDate(selectedMessage.receivedAt)}
                         </Typography>
                       </Grid>
                       {selectedMessage.verificationCode && (
@@ -437,7 +456,19 @@ export default function MessagesPage() {
                   </Box>
                 </Stack>
               </DialogContent>
-              <DialogActions>
+              <DialogActions sx={{ justifyContent: 'space-between' }}>
+                <Button
+                  color="error"
+                  startIcon={<IconTrash size={18} />}
+                  onClick={() => {
+                    if (confirm('Bu mesaji silmek istediginizden emin misiniz?')) {
+                      deleteMutation.mutate(selectedMessage.id);
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
+                  Sil
+                </Button>
                 <Button onClick={() => setSelectedMessage(null)}>Kapat</Button>
               </DialogActions>
             </>

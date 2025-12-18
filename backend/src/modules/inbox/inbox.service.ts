@@ -374,6 +374,36 @@ export class InboxService {
   }
 
   /**
+   * Delete inbox item
+   */
+  async deleteInboxItem(itemId: string) {
+    const item = await this.prisma.inboxItem.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Mesaj bulunamadı');
+    }
+
+    await this.prisma.inboxItem.delete({
+      where: { id: itemId },
+    });
+
+    return { message: 'Mesaj silindi' };
+  }
+
+  /**
+   * Delete multiple inbox items
+   */
+  async deleteMultipleInboxItems(itemIds: string[]) {
+    const result = await this.prisma.inboxItem.deleteMany({
+      where: { id: { in: itemIds } },
+    });
+
+    return { deleted: result.count, message: `${result.count} mesaj silindi` };
+  }
+
+  /**
    * Add mock inbox item (for testing)
    */
   async addMockInboxItem(

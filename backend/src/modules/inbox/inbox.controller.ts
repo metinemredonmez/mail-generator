@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -84,5 +85,17 @@ export class InboxController {
     @Body() dto: MockInboxItemDto,
   ) {
     return this.inboxService.addMockInboxItem(emailId, dto);
+  }
+
+  @Delete('item/:itemId')
+  @ApiOperation({ summary: 'Mesajı sil' })
+  deleteInboxItem(@Param('itemId') itemId: string) {
+    return this.inboxService.deleteInboxItem(itemId);
+  }
+
+  @Post('bulk-delete')
+  @ApiOperation({ summary: 'Birden fazla mesajı sil' })
+  deleteMultipleInboxItems(@Body() dto: MarkReadDto) {
+    return this.inboxService.deleteMultipleInboxItems(dto.itemIds);
   }
 }

@@ -111,6 +111,8 @@ export const inboxApi = {
     api.post('/inbox/mark-read', { itemIds }),
   addMockItem: (emailId: string, data: { subject: string; from: string; body: string; code?: string }) =>
     api.post(`/inbox/mock/${emailId}`, data),
+  deleteItem: (itemId: string) => api.delete(`/inbox/item/${itemId}`),
+  bulkDelete: (itemIds: string[]) => api.post('/inbox/bulk-delete', { itemIds }),
 };
 
 // Groups
