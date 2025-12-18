@@ -82,6 +82,8 @@ export class ImapService {
               struct: true,
             });
 
+            const parsePromises: Promise<void>[] = [];
+
             fetch.on('message', (msg, seqno) => {
               msg.on('body', (stream, info) => {
                 let buffer = '';
@@ -89,21 +91,27 @@ export class ImapService {
                   buffer += chunk.toString('utf8');
                 });
 
-                stream.once('end', async () => {
-                  try {
-                    const parsed = await simpleParser(buffer);
-                    emails.push({
-                      messageId: parsed.messageId || `${seqno}`,
-                      subject: parsed.subject || '(Konu yok)',
-                      from: this.extractFromAddress(parsed),
-                      body: parsed.text || '',
-                      htmlBody: parsed.html || undefined,
-                      receivedAt: parsed.date || new Date(),
-                    });
-                  } catch (parseErr) {
-                    this.logger.error(`Failed to parse email: ${parseErr.message}`);
-                  }
+                // Create a promise for each message parse
+                const parsePromise = new Promise<void>((resolveMsg) => {
+                  stream.once('end', async () => {
+                    try {
+                      const parsed = await simpleParser(buffer);
+                      emails.push({
+                        messageId: parsed.messageId || `${seqno}`,
+                        subject: parsed.subject || '(Konu yok)',
+                        from: this.extractFromAddress(parsed),
+                        body: parsed.text || '',
+                        htmlBody: parsed.html || undefined,
+                        receivedAt: parsed.date || new Date(),
+                      });
+                      this.logger.log(`[IMAP] Parsed message ${seqno}: ${parsed.subject}`);
+                    } catch (parseErr) {
+                      this.logger.error(`Failed to parse email ${seqno}: ${parseErr.message}`);
+                    }
+                    resolveMsg();
+                  });
                 });
+                parsePromises.push(parsePromise);
               });
             });
 
@@ -111,7 +119,10 @@ export class ImapService {
               this.logger.error(`Fetch error: ${fetchErr.message}`);
             });
 
-            fetch.once('end', () => {
+            fetch.once('end', async () => {
+              // Wait for all messages to be parsed
+              await Promise.all(parsePromises);
+              this.logger.log(`[IMAP] All ${emails.length} messages parsed`);
               imap.end();
               resolve(emails);
             });
