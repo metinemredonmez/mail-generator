@@ -344,7 +344,7 @@ export default function MessagesPage() {
               <DialogContent>
                 <Stack spacing={2}>
                   {/* Header Info */}
-                  <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+                  <Box sx={{ bgcolor: 'action.hover', p: 2, borderRadius: 1 }}>
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
                         <Typography variant="caption" color="text.secondary">
@@ -407,13 +407,14 @@ export default function MessagesPage() {
                     {selectedMessage.htmlBody ? (
                       <Box
                         sx={{
-                          bgcolor: 'white',
+                          bgcolor: 'background.paper',
                           p: 2,
                           borderRadius: 1,
                           border: '1px solid',
                           borderColor: 'divider',
                           maxHeight: 400,
                           overflow: 'auto',
+                          '& *': { color: 'text.primary' },
                         }}
                         dangerouslySetInnerHTML={{ __html: selectedMessage.htmlBody }}
                       />
@@ -427,6 +428,7 @@ export default function MessagesPage() {
                           whiteSpace: 'pre-wrap',
                           fontFamily: 'monospace',
                           fontSize: '0.875rem',
+                          color: 'text.primary',
                         }}
                       >
                         {selectedMessage.body || 'Mesaj icerigi bos'}
