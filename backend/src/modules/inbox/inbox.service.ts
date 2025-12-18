@@ -54,16 +54,19 @@ export class InboxService {
       let plainPassword: string;
       try {
         plainPassword = this.emailsService.decryptPassword(email.password);
+        this.logger.log(`[SYNC] Password decrypted successfully for ${email.address}`);
       } catch (err) {
-        this.logger.error(`Failed to decrypt password for ${email.address}`);
+        this.logger.error(`Failed to decrypt password for ${email.address}: ${err.message}`);
         return { synced: 0, message: 'Password decryption failed - old format?' };
       }
 
       // Real IMAP sync - fetch ALL messages (not just unseen)
+      this.logger.log(`[SYNC] Connecting to IMAP for ${email.address}...`);
       const messages = await this.imapService.fetchEmails(email.address, plainPassword, {
         unseen: false,
         limit: 50,
       });
+      this.logger.log(`[SYNC] Fetched ${messages.length} messages from IMAP`);
 
       let synced = 0;
       for (const msg of messages) {
