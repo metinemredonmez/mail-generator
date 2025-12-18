@@ -3,6 +3,7 @@ import {
   IconUsers,
   IconMail,
   IconInbox,
+  IconMailbox,
   IconUsersGroup,
   IconSettings,
   IconLogout,
@@ -67,8 +68,14 @@ const MenuItems: MenuSection[] = [
         chipColor: 'success',
       },
       {
-        id: 'inbox',
+        id: 'messages',
         title: 'Gelen Kutusu',
+        icon: IconMailbox,
+        href: '/messages',
+      },
+      {
+        id: 'inbox',
+        title: 'Dogrulama Kodlari',
         icon: IconInbox,
         href: '/inbox',
       },

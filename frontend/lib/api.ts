@@ -103,6 +103,8 @@ export const inboxApi = {
   getItem: (itemId: string) => api.get(`/inbox/item/${itemId}`),
   getAllCodes: (params?: { page?: number; limit?: number; unused?: boolean }) =>
     api.get('/inbox/codes', { params }),
+  getAllMessages: (params?: { page?: number; limit?: number; unreadOnly?: boolean }) =>
+    api.get('/inbox/messages', { params }),
   markAsRead: (itemId: string) => api.post(`/inbox/item/${itemId}/read`),
   markCodeUsed: (itemId: string) => api.post(`/inbox/item/${itemId}/code-used`),
   markMultipleAsRead: (itemIds: string[]) =>

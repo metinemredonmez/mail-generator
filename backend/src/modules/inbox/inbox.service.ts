@@ -193,6 +193,66 @@ export class InboxService {
   }
 
   /**
+   * Get all messages across all emails
+   */
+  async getAllMessages(query: InboxQueryDto) {
+    const { page = 1, limit = 20, unreadOnly } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (unreadOnly) {
+      where.isRead = false;
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.inboxItem.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          email: {
+            include: {
+              passenger: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { receivedAt: 'desc' },
+      }),
+      this.prisma.inboxItem.count({ where }),
+    ]);
+
+    return {
+      data: items.map((item: any) => ({
+        id: item.id,
+        messageId: item.messageId,
+        subject: item.subject,
+        fromAddress: item.fromAddress,
+        fromName: item.fromName,
+        body: item.body,
+        htmlBody: item.htmlBody,
+        verificationCode: item.verificationCode,
+        codeType: item.codeType,
+        isRead: item.isRead,
+        receivedAt: item.receivedAt,
+        email: item.email?.address,
+        passenger: item.email?.passenger,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
    * Get all verification codes across all emails
    */
   async getAllVerificationCodes(query: InboxQueryDto) {

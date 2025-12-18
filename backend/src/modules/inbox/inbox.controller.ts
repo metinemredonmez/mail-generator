@@ -47,6 +47,12 @@ export class InboxController {
     return this.inboxService.getAllVerificationCodes(query);
   }
 
+  @Get('messages')
+  @ApiOperation({ summary: 'Tüm gelen mesajlar' })
+  getAllMessages(@Query() query: InboxQueryDto) {
+    return this.inboxService.getAllMessages(query);
+  }
+
   @Get('item/:itemId')
   @ApiOperation({ summary: 'Mesaj detayı' })
   getInboxItem(@Param('itemId') itemId: string) {
