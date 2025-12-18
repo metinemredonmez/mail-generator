@@ -139,7 +139,7 @@ export class MailServerService {
       const cleanUsername = this.sanitizeUsername(username);
       const cleanEmail = `${cleanUsername}@${this.domain}`;
 
-      const command = `python3 /usr/local/CyberCP/plogical/mailUtilities.py --function createEmailAccount --domain ${this.domain} --userName ${cleanUsername} --password "${password}"`;
+      const command = `/usr/local/CyberCP/bin/python /usr/local/CyberCP/plogical/mailUtilities.py createEmailAccount --domain ${this.domain} --userName ${cleanUsername} --password "${password}"`;
 
       this.logger.log(`[CLI] Creating mailbox: ${cleanEmail}`);
 
@@ -174,7 +174,7 @@ export class MailServerService {
 
   private async deleteCLIMailbox(email: string): Promise<boolean> {
     try {
-      const command = `python3 /usr/local/CyberCP/plogical/mailUtilities.py --function deleteEmailAccount --email ${email}`;
+      const command = `/usr/local/CyberCP/bin/python /usr/local/CyberCP/plogical/mailUtilities.py deleteEmailAccount --email ${email}`;
 
       this.logger.log(`[CLI] Deleting mailbox: ${email}`);
 
