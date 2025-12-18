@@ -1,0 +1,313 @@
+// ===========================================
+// MAIL GENERATOR - PRISMA SCHEMA
+// Nusuk E-posta Yonetim Paneli
+// ===========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------
+// ADMIN KULLANICILARI
+// -------------------------------------------
+model Admin {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      AdminRole @default(OPERATOR)
+  isActive  Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Iliskiler
+  activityLogs ActivityLog[]
+
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  OPERATOR
+}
+
+// -------------------------------------------
+// YOLCULAR
+// -------------------------------------------
+model Passenger {
+  id String @id @default(uuid())
+
+  // Kisisel Bilgiler
+  firstName   String
+  lastName    String
+  phone       String?
+  passportNo  String?
+  nationality String?
+  birthDate   DateTime?
+  gender      Gender?
+
+  // Nusuk Bilgileri
+  nusukStatus NusukStatus @default(PENDING)
+  nusukUserId String? // Nusuk'taki kullanici ID'si
+
+  // Grup/Tur Bilgisi
+  groupId String?
+  group   Group?  @relation(fields: [groupId], references: [id])
+
+  // E-posta Iliskisi
+  email Email?
+
+  // Ravza Rezervasyonu
+  ravzaReservation RavzaReservation?
+
+  // Notlar
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("passengers")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum NusukStatus {
+  PENDING // Henuz islem yapilmadi
+  EMAIL_CREATED // E-posta olusturuldu
+  CODE_RECEIVED // Onay kodu alindi
+  ACCOUNT_VERIFIED // Hesap dogrulandi
+  RESERVATION_MADE // Ravza rezervasyonu yapildi
+  COMPLETED // Tum islemler tamam
+  FAILED // Hata olustu
+}
+
+// -------------------------------------------
+// GRUPLAR / TURLAR
+// -------------------------------------------
+model Group {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  // Tur Tarihleri
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Iliskiler
+  passengers Passenger[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("groups")
+}
+
+// -------------------------------------------
+// E-POSTALAR
+// -------------------------------------------
+model Email {
+  id String @id @default(uuid())
+
+  // Mail Bilgileri
+  address  String @unique // yolcu123@domain.com
+  password String // Sifreli saklanacak
+
+  // Durum
+  isActive    Boolean   @default(true)
+  lastChecked DateTime?
+
+  // Yolcu Iliskisi (1-1)
+  passengerId String    @unique
+  passenger   Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  // Gelen Kutusundaki Mesajlar
+  inboxItems InboxItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("emails")
+}
+
+// -------------------------------------------
+// GELEN KUTUSU MESAJLARI
+// -------------------------------------------
+model InboxItem {
+  id String @id @default(uuid())
+
+  // Mesaj Bilgileri
+  messageId   String  @unique // IMAP message ID
+  subject     String
+  fromAddress String
+  fromName    String?
+  body        String  @db.Text // Text icerik
+  htmlBody    String? @db.Text // HTML icerik
+
+  // Onay Kodu (varsa cikarilmis)
+  verificationCode String?
+  codeType         CodeType?
+  isCodeUsed       Boolean   @default(false)
+
+  // Durum
+  isRead      Boolean @default(false)
+  isImportant Boolean @default(false)
+
+  // E-posta Iliskisi
+  emailId String
+  email   Email  @relation(fields: [emailId], references: [id], onDelete: Cascade)
+
+  receivedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([emailId, receivedAt])
+  @@index([verificationCode])
+  @@map("inbox_items")
+}
+
+enum CodeType {
+  NUSUK
+  RAVZA
+  OTHER
+}
+
+// -------------------------------------------
+// RAVZA REZERVASYONLARI
+// -------------------------------------------
+model RavzaReservation {
+  id String @id @default(uuid())
+
+  // Rezervasyon Bilgileri
+  reservationCode String?   @unique
+  reservationDate DateTime
+  timeSlot        String // "09:00-10:00"
+
+  // Durum
+  status ReservationStatus @default(PENDING)
+
+  // Yolcu Iliskisi (1-1)
+  passengerId String    @unique
+  passenger   Passenger @relation(fields: [passengerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ravza_reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// -------------------------------------------
+// AKTIVITE LOGLARI
+// -------------------------------------------
+model ActivityLog {
+  id String @id @default(uuid())
+
+  action   String // CREATE_EMAIL, CHECK_INBOX, etc.
+  entity   String // Passenger, Email, etc.
+  entityId String?
+  details  Json?
+
+  // Admin Iliskisi
+  adminId String?
+  admin   Admin?  @relation(fields: [adminId], references: [id])
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([entityId])
+  @@map("activity_logs")
+}
+
+// -------------------------------------------
+// SISTEM AYARLARI
+// -------------------------------------------
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+  type  String @default("string") // string, number, boolean, json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// -------------------------------------------
+// BILDIRIMLER (NOTIFICATIONS)
+// -------------------------------------------
+model Notification {
+  id String @id @default(uuid())
+
+  // Bildirim Icerigi
+  type    NotificationType
+  title   String
+  message String
+  data    Json? // Ek veri (passengerId, emailId, vs.)
+
+  // Durum
+  isRead Boolean @default(false)
+
+  // Iliskili entity (opsiyonel)
+  entityType String? // "passenger", "email", "inbox"
+  entityId   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([isRead, createdAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  VERIFICATION_CODE // Dogrulama kodu geldi
+  NEW_EMAIL         // Yeni e-posta geldi
+  EMAIL_CREATED     // E-posta hesabi olusturuldu
+  BULK_COMPLETE     // Toplu islem tamamlandi
+  SYNC_COMPLETE     // Senkronizasyon tamamlandi
+  ERROR             // Hata bildirimi
+  INFO              // Bilgi bildirimi
+}
+
+// -------------------------------------------
+// GONDERICI HESAPLARI (SMTP)
+// -------------------------------------------
+model SenderAccount {
+  id String @id @default(uuid())
+
+  // Hesap Bilgileri
+  name      String  // Gorunen isim: "Uzman Umre"
+  email     String  @unique // emre@uzmanumre.com
+  password  String  // SMTP sifresi (sifrelenmis)
+  
+  // SMTP Ayarlari (opsiyonel - varsayilan env'den alinir)
+  smtpHost  String?
+  smtpPort  Int?
+  
+  // Durum
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false) // Varsayilan gonderici
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sender_accounts")
+}

@@ -1,0 +1,22 @@
+[0;1;32m●[0m lscpd.service - LSCPD Daemon
+     Loaded: loaded (]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;; [0;1;32menabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;32mactive (running)[0m since Thu 2025-12-11 00:11:37 UTC; 1 day 21h ago
+   Main PID: 74366 (lscpd)
+     CGroup: /system.slice/lscpd.service
+             ├─[0;38;5;245m74366 "lscpd (main)"[0m
+             ├─[0;38;5;245m74368 "lscpd (lscgid)"[0m
+             ├─[0;38;5;245m74369 "lscpd (#01)"[0m
+             ├─[0;38;5;245m93376 /usr/local/CyberCP/bin/lswsgi -m /usr/local/CyberCP/CyberCP/wsgi.py[0m
+             ├─[0;38;5;245m93377 /usr/local/CyberCP/bin/lswsgi -m /usr/local/CyberCP/CyberCP/wsgi.py[0m
+             └─[0;38;5;245m99297 /usr/local/CyberCP/bin/lswsgi -m /usr/local/CyberCP/CyberCP/wsgi.py[0m
+
+Dec 12 21:29:16 server.uzmanumre.com sudo[100100]: pam_unix(sudo:session): session closed for user root
+Dec 12 21:29:16 server.uzmanumre.com sudo[100104]: [0;1;39m[0;1;31m[0;1;39m    root : PWD=/tmp/lscpd ; USER=root ; COMMAND=/usr/bin/tail -n 100 /var/log/auth.log[0m
+Dec 12 21:29:16 server.uzmanumre.com sudo[100104]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=0)
+Dec 12 21:29:16 server.uzmanumre.com sudo[100104]: pam_unix(sudo:session): session closed for user root
+Dec 12 21:32:57 server.uzmanumre.com systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;:11: Unit uses KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update the service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.[0m
+Dec 12 21:32:59 server.uzmanumre.com systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;:11: Unit uses KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update the service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.[0m
+Dec 12 21:32:59 server.uzmanumre.com systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;:11: Unit uses KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update the service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.[0m
+Dec 12 21:33:22 server.uzmanumre.com systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;:11: Unit uses KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update the service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.[0m
+Dec 12 21:33:23 server.uzmanumre.com systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;:11: Unit uses KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update the service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.[0m
+Dec 12 21:33:23 server.uzmanumre.com systemd[1]: [0;1;38;5;185m[0;1;39m[0;1;38;5;185m]8;;file://server.uzmanumre.com/etc/systemd/system/lscpd.service/etc/systemd/system/lscpd.service]8;;:11: Unit uses KillMode=none. This is unsafe, as it disables systemd's process lifecycle management for the service. Please update the service to use a safer KillMode=, such as 'mixed' or 'control-group'. Support for KillMode=none is deprecated and will eventually be removed.[0m

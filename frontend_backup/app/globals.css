@@ -1,0 +1,98 @@
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #f5f5f5;
+  transition: background-color 0.2s ease;
+}
+
+/* Dark mode styles */
+html[data-theme='dark'] body,
+html[style*='color-scheme: dark'] body {
+  background-color: #1a1a2e;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Dark mode scrollbar */
+html[data-theme='dark'] ::-webkit-scrollbar-track,
+html[style*='color-scheme: dark'] ::-webkit-scrollbar-track {
+  background: #2a2a3e;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb,
+html[style*='color-scheme: dark'] ::-webkit-scrollbar-thumb {
+  background: #4a4a5e;
+}
+
+html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover,
+html[style*='color-scheme: dark'] ::-webkit-scrollbar-thumb:hover {
+  background: #5a5a6e;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* NProgress styles */
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: #5D87FF;
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+}
+
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0px;
+  width: 100px;
+  height: 100%;
+  box-shadow: 0 0 10px #5D87FF, 0 0 5px #5D87FF;
+  opacity: 1;
+  transform: rotate(3deg) translate(0px, -4px);
+}
