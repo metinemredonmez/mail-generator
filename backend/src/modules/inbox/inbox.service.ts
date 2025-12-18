@@ -21,6 +21,8 @@ export class InboxService {
    * Fetch and sync inbox for a specific email
    */
   async syncInbox(emailId: string) {
+    this.logger.log(`[SYNC] Starting sync for emailId: ${emailId}`);
+
     const email = await this.prisma.email.findUnique({
       where: { id: emailId },
     });
@@ -28,6 +30,8 @@ export class InboxService {
     if (!email) {
       throw new NotFoundException('E-posta bulunamadı');
     }
+
+    this.logger.log(`[SYNC] Found email: ${email.address}`);
 
     try {
       // For mock/development, skip actual IMAP fetch
